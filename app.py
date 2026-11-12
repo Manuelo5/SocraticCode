@@ -139,13 +139,18 @@ def _show_hint(exercise: Exercise) -> None:
 def _get_api_key() -> str | None:
     """Read credentials from the environment or Streamlit secrets, never log them."""
     api_key = os.getenv("OPENAI_API_KEY", "").strip()
-    if api_key:
+    if _is_configured_api_key(api_key):
         return api_key
     try:
         api_key = str(st.secrets["OPENAI_API_KEY"]).strip()
     except (KeyError, StreamlitSecretNotFoundError):
         return None
-    return api_key or None
+    return api_key if _is_configured_api_key(api_key) else None
+
+
+def _is_configured_api_key(api_key: str) -> bool:
+    """Treat the committed example value as absent rather than sending it to the API."""
+    return bool(api_key and api_key.casefold() != "your_api_key_here")
 
 
 def _show_results() -> None:

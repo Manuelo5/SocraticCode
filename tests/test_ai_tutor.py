@@ -119,6 +119,30 @@ def test_missing_api_key_uses_scripted_fallback_without_creating_client(
     assert "No API key" in (result.error or "")
 
 
+def test_timeout_uses_scripted_fallback_without_retrying(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    responses = FakeResponses()
+    responses.error = TimeoutError("private timeout details")
+    client_creations = 0
+
+    def fake_openai(**kwargs: object) -> FakeClient:
+        nonlocal client_creations
+        client_creations += 1
+        return FakeClient(responses)
+
+    monkeypatch.setattr(ai_tutor, "OpenAI", fake_openai)
+    exercise = EXERCISES[0]
+    result = ai_tutor.generate_hint(
+        exercise, exercise.starter_code, 1, api_key="test-key"
+    )
+
+    assert result.source == "scripted"
+    assert result.text == exercise.hints[0]
+    assert client_creations == 1
+    assert "private timeout details" not in (result.error or "")
+
+
 def test_openai_error_uses_scripted_fallback_without_exposing_exception(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

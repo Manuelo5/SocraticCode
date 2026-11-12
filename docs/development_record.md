@@ -27,10 +27,28 @@ file loaded with python-dotenv, or Streamlit secrets. `OPENAI_MODEL` selects the
 model; the default is `gpt-6-luna`.
 
 Automated tests mock the OpenAI client; no live API call or paid model response is
-claimed. Phase 3 validation: `python -m pytest -q` passed 29 tests, mypy reported
+claimed. Phase 3 validation: `python -m pytest -q` passed 32 tests, mypy reported
 no issues in six application modules, and `compileall` completed successfully.
-The headless Streamlit app loaded successfully through the local agent API, without
-requesting a hint or making a live model call.
+
+## Phase 3 final verification
+
+The installed OpenAI Python SDK was version 3.49.0; the installed Responses API
+signature was inspected, and the request uses the supported `client.responses.create`
+pattern. Official OpenAI documentation lists `gpt-6-luna` as supporting the Responses
+API. No valid API key was configured, so model availability for this account and
+live hint quality were not verified and no billable request was made. A local `.env`
+was created from `.env.example` with its placeholder only.
+
+Offline UI tests verified that missing credentials show a labelled scripted fallback
+without crashing and retain code/progress. Solo Check UI tests verified that hint
+controls are absent, incorrect and correct submissions receive feedback, and the
+completion outcome is recorded. The mocked AI tests do not establish live response
+quality.
+
+Verification caught and fixed a setup edge case: `.env` was created from the example
+with its placeholder, and the app now treats `your_api_key_here` as missing so it
+cannot send the placeholder to OpenAI. The updated regression test confirms the
+placeholder path uses the scripted fallback without constructing an API client.
 
 ## Planned
 
@@ -42,5 +60,6 @@ Prompt instructions and code checks cannot guarantee against every solution leak
 AI coding assistance was used through the VS Code Copilot environment. Suggestions
 were reviewed against the requirements, tests, and local app startup.
 
-Phase 3 changes are local and have not been pushed to GitHub. Push requires explicit
-user approval.
+Phase 3 commits `128fd3a` and `2a51f8f` are present locally and are not on
+`origin/main`. Any further verification commit must be reviewed before pushing.
+Push requires explicit user approval.
