@@ -1,0 +1,22 @@
+# Python environments, bytecode, and test/type-check caches
+.venv/
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.py[cod]
+
+# Local environment variables and credentials
+.DS_Store
+.env
+.env.*
+!.env.example
+**/secrets.toml
+*.pem
+*.key
+
+# Local tooling and generated reports
+.agents/
+.coverage
+coverage.xml
+*.egg-info/
