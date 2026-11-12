@@ -29,4 +29,4 @@ Validation performed on 11 November 2026:
 - Later: optional explain-back prompts and adaptive assistance fading.
 
 The local project is under Git version control. The public repository's initial
-README history is being integrated before any push. No code has been pushed to GitHub.
+README commit is preserved in the integrated history. No code has been pushed to GitHub.

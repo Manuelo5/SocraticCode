@@ -65,7 +65,7 @@ Validation performed for Phase 2:
 - Phase 2: added exercise definitions, scripted hints, safe AST comparison, session progress, sequential unlocking, the Solo Check, results summary, and focused unit tests. Validation results are listed above.
 - Phase 3 is planned: integrate contextual OpenAI-generated hints with explicit error handling and safeguards.
 
-The local project is under Git version control. The public repository's initial README history is being integrated with the local project before the first push. No code has been pushed to GitHub yet.
+The local project is under Git version control. The public repository's initial README commit is preserved in the integrated history. No code has been pushed to GitHub yet.
 
 ## AI assistance
 
