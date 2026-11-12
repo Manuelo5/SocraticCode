@@ -1,33 +1,30 @@
-README prose word count: approximately 560 words.
+README prose word count: approximately 600 words.
 
 # SocraticCode — An AI Tutor That Teaches You to Think
 
-SocraticCode is a local Streamlit prototype for helping beginner programmers reason through Python debugging tasks. It uses progressive scripted hints for two guided exercises, followed by a no-hint Solo Check. The tutor is deliberately not connected to an AI service in this phase.
+SocraticCode is a local Streamlit app for beginner Python debugging. Two guided exercises use context-aware AI hints when an OpenAI API key is configured; a four-level scripted hint ladder is used if the key is missing or the API response is unavailable or withheld. Exercise 3 is an independent Solo Check with all hint controls disabled.
 
 ## What works
 
 - Three editable debugging tasks: calculate an average, check whether a number is even, and return the larger of two numbers.
-- Four individually requested, progressively specific scripted hints for each guided task.
-- Exercise 3 is an independent Solo Check with hints disabled. It unlocks only after the first two exercises are completed.
-- Session progress tracks completed exercises, hints, submissions, and Solo Check outcome.
-- Draft code is retained across Streamlit interactions and exercise navigation. The learner can restart the session.
-- Submitted code is parsed and structurally compared with the reference function. It is never executed.
-- A final summary reports session activity without presenting hint use as a learning score.
+- Students request one hint at a time. The tutor sees the current exercise, learning objective, current code, requested level and earlier hints.
+- AI output is labelled AI-generated. Missing credentials, API failures, empty responses, oversized responses and detected full-solution leaks use a clearly labelled scripted fallback.
+- One hint result is cached per exercise and level in the current Streamlit session. Ordinary reruns do not make model requests.
+- Only an explicit guided-hint request sends the current exercise code and minimal exercise context to OpenAI; no personal information is added.
+- The first two exercises must be completed before the Solo Check unlocks. The Solo Check has no AI hints, scripted hints or chat.
+- Progress, code drafts, hint history, submissions and Solo Check outcome are stored in session state.
+- The evaluator parses and structurally compares the target function's AST. It never executes student code.
 
-## Limitations and planned work
+## Limitations
 
-Structural AST comparison is not behavioral testing. It accepts only the expected function structure, so a logically correct alternative implementation may be marked incorrect. The validator does not run tests or untrusted code. Progress is kept in Streamlit session state and is not saved after the session ends.
-
-OpenAI-powered contextual hints, API error handling, scripted fallback mode, and response-leakage safeguards are planned for Phase 3. Explain-back questions, adaptive hint fading, long-term analytics, and instructor features remain optional future work.
+Prompt instructions and output checks reduce the chance of a complete solution leak but cannot guarantee the model will never reveal one. The local safeguard detects verbatim solution text and syntax-equivalent functions in code blocks; it cannot detect every semantically equivalent answer. Structural AST comparison is not behavioral testing and can reject another correct implementation. Progress is session-only. Live AI behavior was not tested during development; automated API tests use mocks.
 
 ## Technology
 
 - Python 3.11+
 - Streamlit
-- pytest
-- Python's built-in `ast` module for non-executing structural checks
-
-The OpenAI SDK remains listed in `requirements.txt` for the planned integration, but Phase 2 makes no API calls and requires no API key.
+- OpenAI Python SDK and the Responses API
+- pytest and Python's built-in `ast` module
 
 ## Install and run
 
@@ -37,36 +34,38 @@ From the project directory:
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+cp .env.example .env
+```
+
+Edit `.env` locally and set `OPENAI_API_KEY` to your own key. Do not commit `.env` or paste the key into chat. API use may incur charges. `OPENAI_MODEL` defaults to `gpt-6-luna` and can be changed to another model available to your API account. Alternatively, configure `OPENAI_API_KEY` in `.streamlit/secrets.toml` as `OPENAI_API_KEY = "..."`; that file is excluded by `.gitignore`.
+
+Then launch:
+
+```bash
 streamlit run app.py
 ```
 
-Open the local address printed by Streamlit, usually `http://localhost:8501`.
+Open the local address printed by Streamlit, usually `http://localhost:8501`. Without a key, the app still works with scripted hints.
 
-## Run tests
+## Test
 
-Activate the virtual environment, then run:
+Activate the virtual environment and run:
 
 ```bash
 python -m pytest -q
 ```
 
-The tests cover exercise definitions, the hint ladder, structural validation and syntax errors, completion order, hint restrictions for the Solo Check, and submission/progress tracking.
-
-Validation performed for Phase 2:
-
-- `python -m pytest -q` — 13 tests passed.
-- `mypy --ignore-missing-imports app.py exercises.py hint_controller.py evaluator.py progress_tracker.py` — no issues found.
-- Python compilation check — passed.
-- A headless Streamlit session started successfully; I checked the guided flow, sequential unlocking, disabled Solo Check hints, final summary, code draft retention, and session restart.
+The tests cover exercise definitions, hint levels, request context, missing keys, mocked API errors, response-leak safeguards, code retention, progression and Solo Check restrictions. Pytest makes no paid API requests.
 
 ## Development record
 
-- Phase 1: created the Streamlit app shell, dependency setup, README, and initial smoke test.
-- Phase 2: added exercise definitions, scripted hints, safe AST comparison, session progress, sequential unlocking, the Solo Check, results summary, and focused unit tests. Validation results are listed above.
-- Phase 3 is planned: integrate contextual OpenAI-generated hints with explicit error handling and safeguards.
+- Phase 1: Streamlit shell and project setup.
+- Phase 2: exercises, scripted progressive hints, safe structural validation, progression, Solo Check and session summary.
+- Phase 3: contextual OpenAI Responses API hints, request-only calls, session hint caching, fallback and response checks.
+- Later work may include explain-back questions, adaptive hint fading and long-term analytics.
 
-The local project is under Git version control. The public repository's initial README commit is preserved in the integrated history. No code has been pushed to GitHub yet.
+The local Phase 3 work is prepared in Git but has not been pushed to GitHub. No usability study or learning outcome is claimed.
 
 ## AI assistance
 
-AI coding assistance was used in the VS Code Copilot environment. Generated changes were checked against the requirements, exercised with pytest, and run in Streamlit. The code intentionally avoids executing learner submissions or calling a paid AI API in this phase.
+AI coding assistance was used in the VS Code Copilot environment. Suggestions were checked against the requirements, automated tests and local Streamlit startup. No live model response or user-testing result is claimed.

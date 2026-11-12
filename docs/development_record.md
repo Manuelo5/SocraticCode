@@ -1,32 +1,46 @@
-# Development Record
+# Development record
 
 ## Phase 1 — Project setup
 
-Created the local Streamlit application shell, dependency list, environment example,
-README, and initial app-title smoke test.
+Created the local Streamlit app shell, dependency setup, environment example, README,
+and initial app-title smoke test.
 
 ## Phase 2 — Core interactive prototype
 
 Added three Python debugging exercises, the four-level scripted hint controller,
 AST-based structural checking, exercise progression, session-only progress tracking,
-the independent Solo Check, and the final results summary. Added tests for exercise
-content, hint progression, safe evaluation, unlocking, and Solo Check restrictions.
+the independent Solo Check, results summary, and focused unit tests.
 
-Validation performed on 11 November 2026:
-- `python -m pytest -q`: 13 tests passed.
-- `mypy --ignore-missing-imports app.py exercises.py hint_controller.py evaluator.py progress_tracker.py`:
-  no issues found in five source files.
-- `python -m compileall -q app.py exercises.py hint_controller.py evaluator.py progress_tracker.py tests`:
-  completed successfully.
-- A headless Streamlit run loaded successfully. The guided flow, exercise unlock
-  order, Solo Check hint restriction, results summary, draft retention, and restart
-  behavior were exercised through the local Streamlit agent API.
+## Phase 3 — AI tutor integration
+
+Added an OpenAI Responses API adapter using a configurable model. Hints receive only
+the exercise objective and description, current student code, level, and up to three
+prior hints; the reference solution is excluded. AI calls occur only on an explicit
+guided-exercise hint request, with a 20-second timeout, retries disabled, bounded
+output tokens, and response storage disabled. Results are cached in session state.
+Missing credentials, API errors, empty/oversized responses, and detected solution
+leaks use labelled scripted hints. AI and scripted hints remain disabled for the
+Solo Check.
+
+The app reads `OPENAI_API_KEY` from the process environment, a local ignored `.env`
+file loaded with python-dotenv, or Streamlit secrets. `OPENAI_MODEL` selects the
+model; the default is `gpt-6-luna`.
+
+Automated tests mock the OpenAI client; no live API call or paid model response is
+claimed. Phase 3 validation: `python -m pytest -q` passed 29 tests, mypy reported
+no issues in six application modules, and `compileall` completed successfully.
+The headless Streamlit app loaded successfully through the local agent API, without
+requesting a hint or making a live model call.
 
 ## Planned
 
-- Phase 3: contextual AI-generated hints, API error handling, scripted fallback, and
-  safeguards against overly revealing tutor responses.
-- Later: optional explain-back prompts and adaptive assistance fading.
+Optional explain-back questions, adaptive hint fading, long-term performance
+analytics, and instructor dashboards remain future work. The AST checker is
+structural rather than behavioral; session progress is not persisted across sessions.
+Prompt instructions and code checks cannot guarantee against every solution leak.
 
-The local project is under Git version control. The public repository's initial
-README commit is preserved in the integrated history. No code has been pushed to GitHub.
+AI coding assistance was used through the VS Code Copilot environment. Suggestions
+were reviewed against the requirements, tests, and local app startup.
+
+Phase 3 changes are local and have not been pushed to GitHub. Push requires explicit
+user approval.

@@ -11,6 +11,7 @@ class Exercise:
     function_name: str
     title: str
     description: str
+    learning_objective: str
     starter_code: str
     expected_behaviour: str
     reference_solution: str
@@ -26,6 +27,10 @@ EXERCISES = (
         description=(
             "This function should calculate the arithmetic average of a non-empty "
             "list of numbers, but its result is not always accurate."
+        ),
+        learning_objective=(
+            "Understand how division operators affect numeric results when calculating "
+            "a mean."
         ),
         starter_code="""def calculate_average(numbers):
     return sum(numbers) // len(numbers)
@@ -52,6 +57,9 @@ EXERCISES = (
             "This function should return True for even integers and False for odd "
             "integers. Inspect how the remainder is used."
         ),
+        learning_objective=(
+            "Use the modulo operator and a comparison to reason about divisibility."
+        ),
         starter_code="""def is_even(number):
     return number % 2 == 1
 """,
@@ -75,6 +83,9 @@ EXERCISES = (
         description=(
             "Independently fix this function so that it returns whichever of its two "
             "inputs is larger. No hints are available for this challenge."
+        ),
+        learning_objective=(
+            "Independently reason about conditional comparisons and returned values."
         ),
         starter_code="""def larger_of_two(first, second):
     if first < second:

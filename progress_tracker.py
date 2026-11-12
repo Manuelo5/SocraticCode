@@ -14,8 +14,14 @@ def create_progress() -> dict[str, Any]:
         "hints_by_exercise": {exercise.id: 0 for exercise in EXERCISES},
         "submissions_by_exercise": {exercise.id: 0 for exercise in EXERCISES},
         "drafts": {exercise.id: exercise.starter_code for exercise in EXERCISES},
+        "hint_history": {exercise.id: [] for exercise in EXERCISES},
+        "hint_cache": {exercise.id: {} for exercise in EXERCISES},
         "solo_check_passed": False,
     }
+
+
+def save_draft(progress: dict[str, Any], exercise_id: str, code: str) -> None:
+    progress["drafts"][exercise_id] = code
 
 
 def record_hint(progress: dict[str, Any], exercise: Exercise) -> bool:

@@ -2,16 +2,22 @@
 
 from __future__ import annotations
 
-import streamlit as st
+import os
 
+import streamlit as st
+from dotenv import load_dotenv
+from streamlit.errors import StreamlitSecretNotFoundError
+
+from ai_tutor import TutorHint, get_model_name
 from evaluator import evaluate_submission
 from exercises import EXERCISES, Exercise
-from hint_controller import MAX_HINT_LEVEL, get_next_hint
+from hint_controller import MAX_HINT_LEVEL, get_next_hint, request_next_hint
 from progress_tracker import (
     can_access_exercise,
     create_progress,
     record_hint,
     record_submission,
+    save_draft,
 )
 
 
@@ -30,7 +36,7 @@ def _initialise_session() -> None:
 def _save_code(exercise_id: str) -> None:
     """Keep drafts outside widget state so they survive hiding a text area."""
     progress = st.session_state.progress
-    progress["drafts"][exercise_id] = st.session_state[f"code_{exercise_id}"]
+    save_draft(progress, exercise_id, st.session_state[f"code_{exercise_id}"])
     st.session_state.feedback[exercise_id] = None
 
 
@@ -73,7 +79,7 @@ def _show_sidebar() -> None:
             text=f"{len(progress['completed_exercises'])} of {len(EXERCISES)} exercises complete",
         )
         st.divider()
-        st.caption("Hint mode: scripted guidance (not AI-generated)")
+        st.caption("Guided hints: AI when configured; scripted fallback if unavailable.")
         st.button(
             "Restart learning session",
             key="restart_session",
@@ -90,10 +96,56 @@ def _show_hint(exercise: Exercise) -> None:
         st.info("You have used all four hints for this exercise. Try applying what you have learned.")
         return
 
-    record_hint(progress, exercise)
-    level, hint_text = next_hint
+    level, _ = next_hint
+    cached = progress["hint_cache"][exercise.id].get(level)
+    if cached is None:
+        code = st.session_state[f"code_{exercise.id}"]
+        save_draft(progress, exercise.id, code)
+        previous_hints = [
+            item["text"] for item in progress["hint_history"][exercise.id]
+        ]
+        with st.spinner("Preparing your next hint..."):
+            hint = request_next_hint(
+                exercise,
+                code,
+                used,
+                previous_hints,
+                api_key=_get_api_key(),
+                model=get_model_name(),
+            )
+        if hint is None:
+            return
+        cached = {
+            "level": hint.level,
+            "text": hint.text,
+            "source": hint.source,
+            "error": hint.error,
+        }
+        progress["hint_cache"][exercise.id][level] = cached
+    else:
+        hint = TutorHint(
+            level=cached["level"],
+            text=cached["text"],
+            source=cached["source"],
+            error=cached["error"],
+        )
+
+    if not record_hint(progress, exercise):
+        return
     st.session_state.feedback[exercise.id] = None
-    st.session_state[f"latest_hint_{exercise.id}"] = (level, hint_text)
+    progress["hint_history"][exercise.id].append(cached)
+
+
+def _get_api_key() -> str | None:
+    """Read credentials from the environment or Streamlit secrets, never log them."""
+    api_key = os.getenv("OPENAI_API_KEY", "").strip()
+    if api_key:
+        return api_key
+    try:
+        api_key = str(st.secrets["OPENAI_API_KEY"]).strip()
+    except (KeyError, StreamlitSecretNotFoundError):
+        return None
+    return api_key or None
 
 
 def _show_results() -> None:
@@ -127,11 +179,16 @@ def _show_exercise(exercise: Exercise) -> None:
     st.title(exercise.title)
     if exercise.is_solo_check:
         st.warning(
-            "Solo Check — independent challenge. Scripted hints are disabled for this exercise.",
+            "Solo Check — independent challenge. AI hints, scripted hints, and AI chat are disabled.",
             icon=":material/lock:",
         )
     else:
-        st.caption("Scripted hint system · not AI-generated")
+        st.caption(
+            "Progressive guidance: AI-generated when configured; scripted hints are used as fallback."
+        )
+        st.caption(
+            "When AI is configured, requesting a hint sends this exercise's current code to OpenAI."
+        )
 
     st.write(exercise.description)
     with st.container(border=True):
@@ -171,7 +228,9 @@ def _show_exercise(exercise: Exercise) -> None:
             key=f"submit_{exercise.id}",
             disabled=exercise.id in progress["completed_exercises"],
         ):
-            submission = evaluate_submission(exercise, st.session_state[f"code_{exercise.id}"])
+            code = st.session_state[f"code_{exercise.id}"]
+            save_draft(progress, exercise.id, code)
+            submission = evaluate_submission(exercise, code)
             record_submission(progress, exercise, submission.status == "correct")
             st.session_state.feedback[exercise.id] = submission
             st.rerun()
@@ -179,18 +238,26 @@ def _show_exercise(exercise: Exercise) -> None:
     with hint_col:
         if not exercise.is_solo_check:
             used = progress["hints_by_exercise"][exercise.id]
-            st.button(
+            if st.button(
                 f"Request hint ({used}/{MAX_HINT_LEVEL})",
                 key=f"hint_{exercise.id}",
-                on_click=_show_hint,
-                args=(exercise,),
                 disabled=used >= MAX_HINT_LEVEL or exercise.id in progress["completed_exercises"],
-            )
+            ):
+                _show_hint(exercise)
 
-    latest_hint = st.session_state.get(f"latest_hint_{exercise.id}")
-    if latest_hint and not exercise.is_solo_check:
-        level, hint_text = latest_hint
-        st.info(hint_text, title=f"Scripted hint · level {level} of {MAX_HINT_LEVEL}")
+    if not exercise.is_solo_check:
+        for item in progress["hint_history"][exercise.id]:
+            if item["source"] == "ai":
+                title = f"AI-generated hint · level {item['level']} of {MAX_HINT_LEVEL}"
+            else:
+                title = f"Scripted fallback hint · level {item['level']} of {MAX_HINT_LEVEL}"
+            with st.container(border=True):
+                st.info(item["text"], title=title)
+                if item["error"]:
+                    st.caption(item["error"])
+        st.caption(
+            "AI safeguards reduce solution leakage but cannot guarantee that every generated response is safe."
+        )
 
     if exercise.is_solo_check:
         st.caption(
@@ -207,6 +274,7 @@ def _show_exercise(exercise: Exercise) -> None:
 
 
 def main() -> None:
+    load_dotenv()
     st.set_page_config(
         page_title="SocraticCode",
         page_icon=":material/school:",

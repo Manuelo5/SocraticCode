@@ -5,6 +5,7 @@ from progress_tracker import (
     create_progress,
     record_hint,
     record_submission,
+    save_draft,
 )
 
 
@@ -46,3 +47,13 @@ def test_hint_usage_increments_individually_and_stops_at_maximum() -> None:
 
     assert not record_hint(progress, guided_exercise)
     assert progress["hints_by_exercise"]["average"] == MAX_HINT_LEVEL
+
+
+def test_student_draft_is_retained_when_session_progress_changes() -> None:
+    progress = create_progress()
+    draft = "def calculate_average(numbers):\n    return sum(numbers) / len(numbers)\n"
+
+    save_draft(progress, "average", draft)
+    record_hint(progress, EXERCISES[0])
+
+    assert progress["drafts"]["average"] == draft
