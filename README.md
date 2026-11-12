@@ -34,10 +34,10 @@ From the project directory:
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env
+cp -n .env.example .env
 ```
 
-Edit `.env` locally and set `OPENAI_API_KEY` to your own key. Do not commit `.env` or paste the key into chat. API use may incur charges. `OPENAI_MODEL` defaults to `gpt-6-luna` and can be changed to another model available to your API account. Alternatively, configure `OPENAI_API_KEY` in `.streamlit/secrets.toml` as `OPENAI_API_KEY = "..."`; that file is excluded by `.gitignore`.
+Edit `.env` locally and set `OPENAI_API_KEY` to your own key. The `-n` option leaves an existing `.env` unchanged; edit your existing file if you already have one. Do not commit `.env` or paste the key into chat. API use may incur charges. `OPENAI_MODEL` defaults to `gpt-6-luna` and can be changed to another model available to your API account. Alternatively, configure `OPENAI_API_KEY` in `.streamlit/secrets.toml` as `OPENAI_API_KEY = "..."`; that file is excluded by `.gitignore`.
 
 Then launch:
 
