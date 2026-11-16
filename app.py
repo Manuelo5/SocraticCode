@@ -74,12 +74,18 @@ def _show_sidebar() -> None:
                 width="stretch",
             )
 
+        st.caption("Complete Exercises 1 and 2 to unlock the independent Solo Check.")
         st.progress(
             len(progress["completed_exercises"]) / len(EXERCISES),
             text=f"{len(progress['completed_exercises'])} of {len(EXERCISES)} exercises complete",
         )
         st.divider()
-        st.caption("Guided hints: AI when configured; scripted fallback if unavailable.")
+        if _scripted_only_mode():
+            st.caption("Scripted-only mode active · no OpenAI requests will be made.")
+        elif _get_api_key():
+            st.caption("AI hints configured · requests only when you request a hint.")
+        else:
+            st.caption("Scripted fallback active · no API key configured.")
         st.button(
             "Restart learning session",
             key="restart_session",
@@ -138,6 +144,8 @@ def _show_hint(exercise: Exercise) -> None:
 
 def _get_api_key() -> str | None:
     """Read credentials from the environment or Streamlit secrets, never log them."""
+    if _scripted_only_mode():
+        return None
     api_key = os.getenv("OPENAI_API_KEY", "").strip()
     if _is_configured_api_key(api_key):
         return api_key
@@ -146,6 +154,15 @@ def _get_api_key() -> str | None:
     except (KeyError, StreamlitSecretNotFoundError):
         return None
     return api_key if _is_configured_api_key(api_key) else None
+
+
+def _scripted_only_mode() -> bool:
+    """Allow offline evaluation without changing saved credentials."""
+    return os.getenv("SOCRATICCODE_SCRIPTED_ONLY", "").strip().casefold() in {
+        "1",
+        "true",
+        "yes",
+    }
 
 
 def _is_configured_api_key(api_key: str) -> bool:
@@ -188,12 +205,19 @@ def _show_exercise(exercise: Exercise) -> None:
             icon=":material/lock:",
         )
     else:
-        st.caption(
-            "Progressive guidance: AI-generated when configured; scripted hints are used as fallback."
-        )
-        st.caption(
-            "When AI is configured, requesting a hint sends this exercise's current code to OpenAI."
-        )
+        if _scripted_only_mode():
+            st.caption(
+                "Scripted-only mode · no OpenAI requests will be made, even if credentials are configured."
+            )
+        elif _get_api_key():
+            st.caption(
+                f"AI hint mode · {get_model_name()}. A request is sent only when you click Request hint."
+            )
+        else:
+            st.caption(
+                "Scripted fallback mode · no API key configured, so no OpenAI requests are made."
+            )
+        st.caption("When AI mode is active, a hint request sends this exercise's current code to OpenAI.")
 
     st.write(exercise.description)
     with st.container(border=True):
@@ -207,7 +231,10 @@ def _show_exercise(exercise: Exercise) -> None:
         "Your Python code",
         key=code_key,
         height=240,
-        help="Edit the function, then submit it for structural checking.",
+        help=(
+            "Edit the function, then submit it for structural checking. "
+            "Your code is never executed by the app."
+        ),
         disabled=exercise.id in progress["completed_exercises"],
         on_change=_save_code,
         args=(exercise.id,),

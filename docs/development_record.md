@@ -60,6 +60,39 @@ Prompt instructions and code checks cannot guarantee against every solution leak
 AI coding assistance was used through the VS Code Copilot environment. Suggestions
 were reviewed against the requirements, tests, and local app startup.
 
-Phase 3 commits `128fd3a` and `2a51f8f` are present locally and are not on
-`origin/main`. Any further verification commit must be reviewed before pushing.
-Push requires explicit user approval.
+## Phase 4 — Acceptance and evaluation preparation
+
+The request was to verify the complete interactive journey without making any live
+OpenAI calls or claiming participant findings. Inspection identified three clarity
+improvements: the hint mode was described generically, the sidebar did not explain
+why the Solo Check was locked, and the code-editor help did not explicitly state
+that submitted code is not executed. The interface now identifies the active hint
+mode, explains the unlock order, and states the evaluator's no-execution boundary.
+
+Added `SOCRATICCODE_SCRIPTED_ONLY=1` as an offline safeguard. It bypasses both
+environment and Streamlit credentials without changing saved keys, making manual
+acceptance and screenshot capture safe even when a key is configured. The UI
+explicitly labels this mode.
+
+Added a Streamlit `AppTest` journey that starts in scripted-only mode and exercises
+the app from Exercise 1 through restart. It submitted incorrect and corrected
+answers, requested all four hints one at a time, checked that edits survive hint
+requests, unlocked Exercise 2 and the Solo Check, confirmed no Solo Check hint
+control, checked the dashboard totals (3 completed exercises, 5 hints, 6
+submissions, Solo Check passed), and verified restart resets the draft and
+completion state. The API client was guarded so a live request would fail the
+test. The acceptance test passed; the complete suite passed 33 tests. Mypy
+reported no issues in the six application modules, and `compileall` completed
+successfully. No participant sessions, live AI responses, or learning outcomes
+were tested or claimed.
+
+Added `docs/usability-evaluation.md` with a three-participant plan, consent/privacy
+checklist, tasks, observation and post-task questions, and a blank results template.
+Added `docs/storyboards.md` with three reproducible scripted-mode screenshot
+scenarios. README and this record now distinguish implemented, simulated,
+unverified, and unevaluated components. These documents are evaluation materials;
+they do not report fabricated observations.
+
+The Phase 3 commits `128fd3a` and `2a51f8f` are included in the synchronized
+`origin/main` history. Phase 4 changes are local until explicitly reviewed and
+pushed; no push is authorized by this work.

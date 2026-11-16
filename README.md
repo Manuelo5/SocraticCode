@@ -2,7 +2,14 @@ README prose word count: approximately 600 words.
 
 # SocraticCode — An AI Tutor That Teaches You to Think
 
-SocraticCode is a local Streamlit app for beginner Python debugging. Two guided exercises use context-aware AI hints when an OpenAI API key is configured; a four-level scripted hint ladder is used if the key is missing or the API response is unavailable or withheld. Exercise 3 is an independent Solo Check with all hint controls disabled.
+SocraticCode is a functional interactive tutoring prototype for beginner Python debugging. Its two guided exercises use a four-level scripted hint ladder by default, with an OpenAI integration available when credentials are configured. Live AI behavior has not been verified. Exercise 3 is an independent Solo Check with all hint controls disabled.
+
+## Project scope
+
+- **Implemented:** Streamlit exercise flow, scripted hints and fallback, AST-based structural checking, progression, session dashboard, restart, and mocked OpenAI integration.
+- **Simulated for testing:** AI responses are mocked in automated tests; acceptance and storyboard runs can force scripted-only mode.
+- **Unverified:** Live OpenAI account/model access and genuine AI hint quality. Do not treat the prototype as a verified live AI tutor.
+- **Not evaluated yet:** Usability with participants or learning outcomes. See the [usability evaluation plan](docs/usability-evaluation.md) and [storyboards](docs/storyboards.md).
 
 ## What works
 
@@ -23,7 +30,7 @@ Prompt instructions and output checks reduce the chance of a complete solution l
 
 The installed OpenAI Python SDK is version 3.49.0, and the Responses API call shape was checked against the installed SDK. OpenAI's current [GPT-6 Luna model documentation](https://developers.openai.com/api/docs/models/gpt-6-luna) lists the Responses endpoint as supported. This does not confirm that the model is enabled for your API account. No valid key was configured during verification, so account access and live AI hints could not be tested. The local `.env` was created from `.env.example` and still contains only its placeholder.
 
-The complete mocked/offline test suite passed **32 tests**. It covers AI request parameters, fallback behavior, hint caching and code preservation, and Solo Check restrictions. No live or billable API calls were made. Verification also caught and fixed a configuration edge case: the example `your_api_key_here` value is now treated as missing, so it cannot trigger an API request.
+The complete mocked/offline test suite passed **33 tests**. It covers AI request parameters, fallback behavior, hint caching and code preservation, and Solo Check restrictions. No live or billable API calls were made. Verification also caught and fixed a configuration edge case: the example `your_api_key_here` value is now treated as missing, so it cannot trigger an API request.
 
 ## Technology
 
@@ -63,14 +70,31 @@ python -m pytest -q
 
 The tests cover exercise definitions, hint levels, request context, missing keys, mocked API errors, response-leak safeguards, code retention, progression and Solo Check restrictions. Pytest makes no paid API requests.
 
+Phase 4 verification: the scripted-only `AppTest` journey passed through all three
+exercises, hint requests, code revisions, dashboard, and restart. The full suite
+passed **33 tests**; mypy reported no issues in six application modules, and
+`compileall` completed successfully. This was automated acceptance testing, not a
+participant usability study.
+
 ## Development record
 
 - Phase 1: Streamlit shell and project setup.
 - Phase 2: exercises, scripted progressive hints, safe structural validation, progression, Solo Check and session summary.
 - Phase 3: contextual OpenAI Responses API hints, request-only calls, session hint caching, fallback and response checks. Static SDK/model documentation and mocked tests were verified; live account/model access was not verified because no API key was configured.
+- Phase 4: end-to-end offline acceptance test, explicit hint-mode and progression guidance, scripted-only safeguard, usability plan and storyboard materials. No participant study or learning outcome is claimed.
 - Later work may include explain-back questions, adaptive hint fading and long-term analytics.
 
-The local Phase 3 work is prepared in Git but has not been pushed to GitHub. No usability study or learning outcome is claimed.
+The repository is connected to GitHub. Phase 4 working-tree changes are local and have not been pushed. No participant study or learning outcome is claimed.
+
+## Offline evaluation and storyboards
+
+To guarantee that no hint request reaches OpenAI—even if a key exists in your environment or Streamlit secrets—start the app in scripted-only mode:
+
+```bash
+SOCRATICCODE_SCRIPTED_ONLY=1 streamlit run app.py
+```
+
+The interface labels this mode and uses the scripted hints. It does not modify or delete saved credentials. Follow [docs/usability-evaluation.md](docs/usability-evaluation.md) to conduct three participant sessions and record results without inventing findings. [docs/storyboards.md](docs/storyboards.md) gives three reproducible screenshot scenarios.
 
 ## AI assistance
 
