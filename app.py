@@ -243,11 +243,13 @@ def _show_exercise(exercise: Exercise) -> None:
     result = st.session_state.feedback.get(exercise.id)
     if result:
         if result.status == "syntax_error":
-            st.error(f"Syntax error: {result.message}", title="Check your Python syntax")
+            st.error(result.message, title="Check your Python syntax")
         elif result.status == "correct":
             st.success(result.message, title="Correct")
+        elif result.status == "unsupported":
+            st.warning(result.message, title="Structure not supported")
         else:
-            st.warning(result.message, title="Not correct yet")
+            st.warning(result.message, title="Review your logic")
 
     if exercise.id in progress["completed_exercises"]:
         st.success("This exercise is complete. You can move on or review it.")
@@ -298,10 +300,21 @@ def _show_exercise(exercise: Exercise) -> None:
 
     with st.expander("How code is checked"):
         st.write(
-            "The app parses your code and compares the target function's syntax tree "
-            "with the reference structure. It never runs submitted code. This is not "
-            "unit-test execution: another logically correct implementation may not "
-            "match the expected structure and may be marked incorrect."
+            "The app parses your code and checks a limited set of safe syntax patterns. "
+            "It never runs submitted code. Supported patterns are:"
+        )
+        st.markdown(
+            "- **Average:** divide the sum of the input list by its length, either "
+            "directly or through simple local variables.\n"
+            "- **Even check:** use the remainder after division by two in a comparison "
+            "that distinguishes remainders zero and one, or negate that remainder.\n"
+            "- **Solo Check:** return one of the two inputs from a two-way comparison "
+            "branch (with or without `else`), use an inline conditional, or use the "
+            "built-in maximum of the two inputs."
+        )
+        st.caption(
+            "These patterns are not exhaustive. A correct solution outside them may "
+            "be reported as unsupported; this is not behavioral testing."
         )
 
 

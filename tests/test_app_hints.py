@@ -70,6 +70,21 @@ def test_missing_key_uses_scripted_fallback_in_app(
     assert any("No API key is configured" in item.value for item in app.caption)
 
 
+def test_unsupported_valid_solution_is_not_reported_as_incorrect() -> None:
+    app = AppTest.from_file(str(APP_PATH)).run()
+    alternative = (
+        "def calculate_average(numbers):\n"
+        "    return sum(numbers) / len(numbers) + 0\n"
+    )
+    app.text_area(key="code_average").set_value(alternative).run()
+    app.button(key="submit_average").click().run()
+
+    assert not app.exception
+    assert any(item.title == "Structure not supported" for item in app.warning)
+    assert not any(item.title == "Review your logic" for item in app.warning)
+    assert "average" not in app.session_state["progress"]["completed_exercises"]
+
+
 def test_solo_check_submission_records_incorrect_and_success_outcomes(
     monkeypatch,
 ) -> None:
@@ -88,7 +103,7 @@ def test_solo_check_submission_records_incorrect_and_success_outcomes(
     assert not app.exception
     assert progress["solo_check_passed"] is False
     assert progress["submissions_by_exercise"]["larger"] == 1
-    assert any("Not correct yet" in item.title for item in app.warning)
+    assert any("Review your logic" in item.title for item in app.warning)
 
     solution = (
         "def larger_of_two(first, second):\n"

@@ -28,7 +28,7 @@ def test_complete_scripted_learning_journey_and_restart(monkeypatch) -> None:
 
     app.button(key="submit_average").click().run()
     assert not app.exception
-    assert any(item.title == "Not correct yet" for item in app.warning)
+    assert any(item.title == "Review your logic" for item in app.warning)
 
     edited_draft = (
         "def calculate_average(numbers):\n"
@@ -59,7 +59,7 @@ def test_complete_scripted_learning_journey_and_restart(monkeypatch) -> None:
     app.button(key="navigate_even").click().run()
     assert app.title[0].value == "Exercise 2: Check whether a number is even"
     app.button(key="submit_even").click().run()
-    assert any(item.title == "Not correct yet" for item in app.warning)
+    assert any(item.title == "Review your logic" for item in app.warning)
     app.button(key="hint_even").click().run()
     assert any(
         item.title == "Scripted fallback hint · level 1 of 4" for item in app.info
@@ -81,7 +81,7 @@ def test_complete_scripted_learning_journey_and_restart(monkeypatch) -> None:
     app.button(key="submit_larger").click().run()
     assert not app.exception
     assert progress["solo_check_passed"] is False
-    assert any(item.title == "Not correct yet" for item in app.warning)
+    assert any(item.title == "Review your logic" for item in app.warning)
 
     solo_solution = (
         "def larger_of_two(first, second):\n"

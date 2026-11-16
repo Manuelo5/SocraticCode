@@ -20,11 +20,11 @@ SocraticCode is a functional interactive tutoring prototype for beginner Python 
 - Only an explicit guided-hint request sends the current exercise code and minimal exercise context to OpenAI; no personal information is added.
 - The first two exercises must be completed before the Solo Check unlocks. The Solo Check has no AI hints, scripted hints or chat.
 - Progress, code drafts, hint history, submissions and Solo Check outcome are stored in session state.
-- The evaluator parses and structurally compares the target function's AST. It never executes student code.
+- The evaluator uses bounded, exercise-specific AST patterns. It never executes student code and reports unrecognized structures as unsupported rather than incorrect.
 
 ## Limitations
 
-Prompt instructions and output checks reduce the chance of a complete solution leak but cannot guarantee the model will never reveal one. The local safeguard detects verbatim solution text and syntax-equivalent functions in code blocks; it cannot detect every semantically equivalent answer. Structural AST comparison is not behavioral testing and can reject another correct implementation. Progress is session-only. Live AI behavior was not tested during development; automated API tests use mocks.
+Prompt instructions and output checks reduce the chance of a complete solution leak but cannot guarantee the model will never reveal one. The local safeguard detects verbatim solution text and syntax-equivalent functions in code blocks; it cannot detect every semantically equivalent answer. The code evaluator recognizes only documented patterns and is not behavioral testing; a correct solution outside those patterns may be marked unsupported. Progress is session-only. Live AI behavior was not tested during development; automated API tests use mocks.
 
 ## Phase 3 verification status
 
@@ -75,6 +75,22 @@ exercises, hint requests, code revisions, dashboard, and restart. The full suite
 passed **33 tests**; mypy reported no issues in six application modules, and
 `compileall` completed successfully. This was automated acceptance testing, not a
 participant usability study.
+
+### Evaluator refinement
+
+Manual testing reported that a correct Solo Check solution with an explicit `else`
+was rejected because the original checker required the entire submitted AST to
+exactly match one reference AST. The evaluator now recognizes bounded patterns for
+the three exercises: direct or simple-alias average calculations; equivalent
+remainder comparisons for evenness; and conditional, inline-conditional, or
+`max`-based selection of the larger input. It distinguishes syntax errors,
+recognizable incorrect logic, and valid structures it cannot safely check.
+
+The regression suite now passes **42 tests**; mypy reports no issues in six
+application modules, and Python compilation succeeds. This improves feedback
+accuracy for supported alternatives, but it does not prove complete behavioral
+equivalence. Supported patterns and the manual finding are recorded in
+`docs/development_record.md`.
 
 ## Development record
 

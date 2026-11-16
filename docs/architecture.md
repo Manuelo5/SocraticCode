@@ -12,7 +12,7 @@ flowchart LR
     API[OpenAI API<br/>Requires configured key and account access]
     Fallback[Scripted hint fallback<br/>Implemented]
     Offline[Scripted-only evaluation mode<br/>Implemented; bypasses credentials]
-    Evaluator[Code evaluator<br/>Implemented: AST structure comparison; no execution]
+    Evaluator[Code evaluator<br/>Implemented: bounded exercise-specific AST patterns; no execution]
     Progress[Progress tracker<br/>Implemented: Streamlit session state]
     Planned[Optional planned work<br/>Explain-back prompts, adaptive hint fading,<br/>long-term analytics and instructor tools]
 
@@ -42,9 +42,10 @@ flowchart LR
 - Hints are cached per exercise/level for the current session. API errors or a detected full-solution response produce a visible scripted fallback.
 - API keys are read from `OPENAI_API_KEY` in the environment or Streamlit secrets. Local `.env` and `.streamlit/secrets.toml` files are ignored by Git.
 - The evaluator parses and compares syntax trees and never executes untrusted student code.
+- The evaluator accepts only documented patterns for average calculation, even checks, and selecting the larger input. It separates recognized incorrect logic from unsupported structures and does not claim exhaustive behavioral equivalence.
 - The Solo Check has no tutor entry point or hint widget.
 - The Phase 4 acceptance journey is automated with Streamlit `AppTest`; participant evaluation materials are prepared but no participant sessions have been conducted.
 
 ## Known limitations and planned components
 
-Prompt instructions and output checks reduce, but cannot eliminate, solution leakage. The structural evaluator may reject a logically correct implementation with different syntax. Progress is not persisted between sessions. Optional explain-back prompts, adaptive assistance fading, long-term performance analytics and instructor dashboards are not implemented.
+Prompt instructions and output checks reduce, but cannot eliminate, solution leakage. The AST evaluator is not behavioral testing; a correct solution outside its supported patterns may be marked unsupported. Progress is not persisted between sessions. Optional explain-back prompts, adaptive assistance fading, long-term performance analytics and instructor dashboards are not implemented.

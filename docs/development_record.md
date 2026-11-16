@@ -96,3 +96,55 @@ they do not report fabricated observations.
 The Phase 3 commits `128fd3a` and `2a51f8f` are included in the synchronized
 `origin/main` history. Phase 4 changes are local until explicitly reviewed and
 pushed; no push is authorized by this work.
+
+## Final refinement — bounded AST validation
+
+The user reported a real issue from manual testing: the Solo Check solution with
+an explicit `else` branch was rejected even though it returns the larger input.
+The reported session completed all three exercises, requested four scripted hints,
+made 13 submissions, and passed the Solo Check. Those are user-reported manual
+results, not results from an additional participant study.
+
+The cause was exact whole-function AST equality against a single reference
+implementation. The submitted `if` statement had an `else` block in its AST,
+while the reference placed the fallback `return` after the `if`; the two forms
+behave equivalently, but their ASTs differ.
+
+Replaced exact-reference matching with exercise-specific, bounded AST recognizers.
+They parse the submission and inspect only whitelisted syntax; no submitted code
+is imported, evaluated, or executed. The documented supported patterns are:
+
+- **Average:** direct sum divided by list length, or the same operations assigned
+  to simple local variables before the return. The known floor-division version
+  is classified as incorrect. Other expressions outside the recognized form are
+  unsupported rather than being asserted incorrect.
+- **Even check:** a direct modulo-by-two expression compared with an integer
+  constant. The checker accepts comparisons whose results distinguish remainder
+  zero from remainder one, including reversed operands, and boolean negation of
+  the modulo expression. A recognizable predicate that does not distinguish
+  those two remainders is classified as incorrect.
+- **Solo Check:** a two-way `if` with either an explicit `else` or a following
+  fallback return, an inline conditional, or a call to built-in `max` with both
+  inputs. Conditional branches must return one of the inputs, and the checker
+  checks the branch logic for either ordering and a tie using its own static
+  comparison handling; it never runs the student's function.
+
+Syntax errors retain distinct line-aware feedback. Recognizable incorrect logic
+gets a review-your-logic message; valid structures outside these patterns get an
+unsupported-structure message and are not described as incorrect. The UI's
+“How code is checked” expander documents the supported pattern families and
+limitations without exposing a complete reference function.
+
+Regression tests cover all reference solutions, average aliases, modulo-based
+equivalents, the explicit-`else` Solo Check solution, an inline conditional,
+`max`, a smaller-number implementation, incorrect logic, syntax errors, an
+unsupported-but-valid expression, and a source snippet that would create a file
+if it were executed. Existing AppTests continue to cover progression and the
+absence of Solo Check hints. The full suite passed **42 tests**; mypy reported no
+issues in the six application modules, and `compileall` completed successfully.
+
+This refinement is intended to improve feedback quality and learner trust: a
+valid but unrecognized structure is no longer labelled incorrect, and syntax or
+logic feedback gives a clearer next step. It supports error recovery without
+claiming that the evaluator proves semantic equivalence for all Python programs.
+A correct solution outside the whitelist can still be marked unsupported.
